@@ -328,6 +328,7 @@ struct index_state {
 	struct ewah_bitmap *fsmonitor_dirty;
 	struct mem_pool *ce_mem_pool;
 	struct progress *progress;
+	struct repository *repo;
 };
 
 /* Name hashing */
@@ -472,6 +473,7 @@ static inline enum object_type object_type(unsigned int mode)
 #define TEMPLATE_DIR_ENVIRONMENT "GIT_TEMPLATE_DIR"
 #define CONFIG_ENVIRONMENT "GIT_CONFIG"
 #define CONFIG_DATA_ENVIRONMENT "GIT_CONFIG_PARAMETERS"
+#define CONFIG_COUNT_ENVIRONMENT "GIT_CONFIG_COUNT"
 #define EXEC_PATH_ENVIRONMENT "GIT_EXEC_PATH"
 #define CEILING_DIRECTORIES_ENVIRONMENT "GIT_CEILING_DIRECTORIES"
 #define NO_REPLACE_OBJECTS_ENVIRONMENT "GIT_NO_REPLACE_OBJECTS"
@@ -801,7 +803,7 @@ static inline int index_pos_to_insert_pos(uintmax_t pos)
 #define ADD_CACHE_OK_TO_ADD 1		/* Ok to add */
 #define ADD_CACHE_OK_TO_REPLACE 2	/* Ok to replace file/directory */
 #define ADD_CACHE_SKIP_DFCHECK 4	/* Ok to skip DF conflict checks */
-#define ADD_CACHE_JUST_APPEND 8		/* Append only; tree.c::read_tree() */
+#define ADD_CACHE_JUST_APPEND 8		/* Append only */
 #define ADD_CACHE_NEW_ONLY 16		/* Do not replace existing ones */
 #define ADD_CACHE_KEEP_CACHE_TREE 32	/* Do not invalidate cache-tree */
 #define ADD_CACHE_RENORMALIZE 64        /* Pass along HASH_RENORMALIZE */
@@ -1231,6 +1233,8 @@ static inline int is_absolute_path(const char *path)
 int is_directory(const char *);
 char *strbuf_realpath(struct strbuf *resolved, const char *path,
 		      int die_on_error);
+char *strbuf_realpath_forgiving(struct strbuf *resolved, const char *path,
+				int die_on_error);
 char *real_pathdup(const char *path, int die_on_error);
 const char *absolute_path(const char *path);
 char *absolute_pathdup(const char *path);
@@ -1655,7 +1659,7 @@ static inline void cache_def_clear(struct cache_def *cache)
 
 int has_symlink_leading_path(const char *name, int len);
 int threaded_has_symlink_leading_path(struct cache_def *, const char *, int);
-int check_leading_path(const char *name, int len);
+int check_leading_path(const char *name, int len, int warn_on_lstat_err);
 int has_dirs_only_path(const char *name, int len, int prefix_len);
 void invalidate_lstat_cache(void);
 void schedule_dir_for_removal(const char *name, int len);

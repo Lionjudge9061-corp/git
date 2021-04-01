@@ -127,7 +127,7 @@ static void grow_object_hash(struct repository *r)
 	int new_hash_size = r->parsed_objects->obj_hash_size < 32 ? 32 : 2 * r->parsed_objects->obj_hash_size;
 	struct object **new_hash;
 
-	new_hash = xcalloc(new_hash_size, sizeof(struct object *));
+	CALLOC_ARRAY(new_hash, new_hash_size);
 	for (i = 0; i < r->parsed_objects->obj_hash_size; i++) {
 		struct object *obj = r->parsed_objects->obj_hash[i];
 
@@ -412,15 +412,16 @@ void object_array_clear(struct object_array *array)
 }
 
 /*
- * Return true iff array already contains an entry with name.
+ * Return true if array already contains an entry.
  */
-static int contains_name(struct object_array *array, const char *name)
+static int contains_object(struct object_array *array,
+			   const struct object *item, const char *name)
 {
 	unsigned nr = array->nr, i;
 	struct object_array_entry *object = array->objects;
 
 	for (i = 0; i < nr; i++, object++)
-		if (!strcmp(object->name, name))
+		if (item == object->item && !strcmp(object->name, name))
 			return 1;
 	return 0;
 }
@@ -432,7 +433,8 @@ void object_array_remove_duplicates(struct object_array *array)
 
 	array->nr = 0;
 	for (src = 0; src < nr; src++) {
-		if (!contains_name(array, objects[src].name)) {
+		if (!contains_object(array, objects[src].item,
+				     objects[src].name)) {
 			if (src != array->nr)
 				objects[array->nr] = objects[src];
 			array->nr++;
@@ -476,7 +478,7 @@ struct parsed_object_pool *parsed_object_pool_new(void)
 	o->object_state = allocate_alloc_state();
 
 	o->is_shallow = -1;
-	o->shallow_stat = xcalloc(1, sizeof(*o->shallow_stat));
+	CALLOC_ARRAY(o->shallow_stat, 1);
 
 	o->buffer_slab = allocate_commit_buffer_slab();
 

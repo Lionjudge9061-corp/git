@@ -22,11 +22,6 @@ static char const * const builtin_sparse_checkout_usage[] = {
 	NULL
 };
 
-static char *get_sparse_checkout_filename(void)
-{
-	return git_pathdup("info/sparse-checkout");
-}
-
 static void write_patterns_to_file(FILE *fp, struct pattern_list *pl)
 {
 	int i;
@@ -69,7 +64,7 @@ static int sparse_checkout_list(int argc, const char **argv)
 	pl.use_cone_patterns = core_sparse_checkout_cone;
 
 	sparse_filename = get_sparse_checkout_filename();
-	res = add_patterns_from_file_to_list(sparse_filename, "", 0, &pl, NULL);
+	res = add_patterns_from_file_to_list(sparse_filename, "", 0, &pl, NULL, 0);
 	free(sparse_filename);
 
 	if (res < 0) {
@@ -326,7 +321,7 @@ static int sparse_checkout_init(int argc, const char **argv)
 	memset(&pl, 0, sizeof(pl));
 
 	sparse_filename = get_sparse_checkout_filename();
-	res = add_patterns_from_file_to_list(sparse_filename, "", 0, &pl, NULL);
+	res = add_patterns_from_file_to_list(sparse_filename, "", 0, &pl, NULL, 0);
 
 	/* If we already have a sparse-checkout file, use it. */
 	if (res >= 0) {
@@ -488,7 +483,7 @@ static void add_patterns_cone_mode(int argc, const char **argv,
 	existing.use_cone_patterns = core_sparse_checkout_cone;
 
 	if (add_patterns_from_file_to_list(sparse_filename, "", 0,
-					   &existing, NULL))
+					   &existing, NULL, 0))
 		die(_("unable to load existing sparse-checkout patterns"));
 	free(sparse_filename);
 
@@ -512,7 +507,7 @@ static void add_patterns_literal(int argc, const char **argv,
 {
 	char *sparse_filename = get_sparse_checkout_filename();
 	if (add_patterns_from_file_to_list(sparse_filename, "", 0,
-					   pl, NULL))
+					   pl, NULL, 0))
 		die(_("unable to load existing sparse-checkout patterns"));
 	free(sparse_filename);
 	add_patterns_from_input(pl, argc, argv);

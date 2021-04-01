@@ -174,7 +174,7 @@ static void print_all(FILE *outfile, struct list_head *head,
 
 static struct trailer_item *trailer_from_arg(struct arg_item *arg_tok)
 {
-	struct trailer_item *new_item = xcalloc(sizeof(*new_item), 1);
+	struct trailer_item *new_item = xcalloc(1, sizeof(*new_item));
 	new_item->token = arg_tok->token;
 	new_item->value = arg_tok->value;
 	arg_tok->token = arg_tok->value = NULL;
@@ -445,7 +445,7 @@ static struct arg_item *get_conf_item(const char *name)
 	}
 
 	/* Item does not already exists, create it */
-	item = xcalloc(sizeof(*item), 1);
+	CALLOC_ARRAY(item, 1);
 	duplicate_conf(&item->conf, &default_conf_info);
 	item->conf.name = xstrdup(name);
 
@@ -664,7 +664,7 @@ static void parse_trailer(struct strbuf *tok, struct strbuf *val,
 static struct trailer_item *add_trailer_item(struct list_head *head, char *tok,
 					     char *val)
 {
-	struct trailer_item *new_item = xcalloc(sizeof(*new_item), 1);
+	struct trailer_item *new_item = xcalloc(1, sizeof(*new_item));
 	new_item->token = tok;
 	new_item->value = val;
 	list_add_tail(&new_item->list, head);
@@ -675,7 +675,7 @@ static void add_arg_item(struct list_head *arg_head, char *tok, char *val,
 			 const struct conf_info *conf,
 			 const struct new_trailer_item *new_trailer_item)
 {
-	struct arg_item *new_item = xcalloc(sizeof(*new_item), 1);
+	struct arg_item *new_item = xcalloc(1, sizeof(*new_item));
 	new_item->token = tok;
 	new_item->value = val;
 	duplicate_conf(&new_item->conf, conf);
@@ -1131,7 +1131,9 @@ static void format_trailer_info(struct strbuf *out,
 	size_t i;
 
 	/* If we want the whole block untouched, we can take the fast path. */
-	if (!opts->only_trailers && !opts->unfold && !opts->filter && !opts->separator) {
+	if (!opts->only_trailers && !opts->unfold && !opts->filter &&
+	    !opts->separator && !opts->key_only && !opts->value_only &&
+	    !opts->key_value_separator) {
 		strbuf_add(out, info->trailer_start,
 			   info->trailer_end - info->trailer_start);
 		return;
@@ -1153,8 +1155,15 @@ static void format_trailer_info(struct strbuf *out,
 				if (opts->separator && out->len != origlen)
 					strbuf_addbuf(out, opts->separator);
 				if (!opts->value_only)
-					strbuf_addf(out, "%s: ", tok.buf);
-				strbuf_addbuf(out, &val);
+					strbuf_addbuf(out, &tok);
+				if (!opts->key_only && !opts->value_only) {
+					if (opts->key_value_separator)
+						strbuf_addbuf(out, opts->key_value_separator);
+					else
+						strbuf_addstr(out, ": ");
+				}
+				if (!opts->key_only)
+					strbuf_addbuf(out, &val);
 				if (!opts->separator)
 					strbuf_addch(out, '\n');
 			}
